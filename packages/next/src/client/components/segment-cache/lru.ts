@@ -119,7 +119,20 @@ function cleanup() {
   }
 }
 
+// Use requestIdleCallback where available, otherwise use MessageChannel for
+// better performance than setTimeout(0). MessageChannel schedules work between
+// frames without blocking user interactions, improving INP (Interaction to Next Paint).
+// This fallback is temporary until Safari supports requestIdleCallback natively.
+// https://bugs.webkit.org/show_bug.cgi?id=285049
 const requestCleanupCallback =
   typeof requestIdleCallback === 'function'
     ? requestIdleCallback
-    : (cb: () => void) => setTimeout(cb, 0)
+    : (() => {
+        // MessageChannel schedules work without blocking the main thread,
+        // better than setTimeout(0) which can delay user interactions
+        const channel = new MessageChannel()
+        return (cb: () => void) => {
+          channel.port1.onmessage = () => cb()
+          channel.port2.postMessage(null)
+        }
+      })()
