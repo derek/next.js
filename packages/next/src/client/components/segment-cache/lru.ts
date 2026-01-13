@@ -8,10 +8,33 @@ let head: UnknownMapEntry | null = null
 let didScheduleCleanup: boolean = false
 let lruSize: number = 0
 
-// TODO: I chose the max size somewhat arbitrarily. Consider setting this based
-// on navigator.deviceMemory, or some other heuristic. We should make this
-// customizable via the Next.js config, too.
-const maxLruSize = 50 * 1024 * 1024 // 50 MB
+/**
+ * Calculate adaptive cache size based on device memory.
+ * Uses 5% of available device memory, capped between 25 MB and 200 MB.
+ * Falls back to 50 MB if navigator.deviceMemory is unavailable.
+ */
+function getAdaptiveCacheSize(): number {
+  // Check if navigator.deviceMemory is available (not in all browsers/environments)
+  if (
+    typeof navigator !== 'undefined' &&
+    'deviceMemory' in navigator &&
+    typeof navigator.deviceMemory === 'number'
+  ) {
+    const deviceMemoryGB = navigator.deviceMemory
+    const deviceMemoryBytes = deviceMemoryGB * 1024 * 1024 * 1024
+    // Use 5% of device memory for cache
+    const calculatedSize = Math.floor(deviceMemoryBytes * 0.05)
+    // Clamp between 25 MB (for low-memory devices) and 200 MB (for high-memory devices)
+    const minSize = 25 * 1024 * 1024 // 25 MB
+    const maxSize = 200 * 1024 * 1024 // 200 MB
+    return Math.max(minSize, Math.min(maxSize, calculatedSize))
+  }
+  // Default fallback for environments without deviceMemory API
+  return 50 * 1024 * 1024 // 50 MB
+}
+
+// TODO: Make this customizable via the Next.js config.
+const maxLruSize = getAdaptiveCacheSize()
 
 export function lruPut(node: UnknownMapEntry) {
   if (head === node) {
