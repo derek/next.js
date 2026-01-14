@@ -666,6 +666,7 @@ export default function Image({
       // security sensitive configs like `localPatterns`, which is needed
       // during the server render to ensure it's validated. Therefore use
       // configContext, which holds the config from the server for validation.
+      __normalized: true as const,
       localPatterns:
         typeof window === 'undefined'
           ? configContext?.localPatterns

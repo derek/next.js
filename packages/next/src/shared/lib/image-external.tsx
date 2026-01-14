@@ -1,7 +1,7 @@
 import type { ImageConfigComplete, ImageLoaderProps } from './image-config'
 import type { ImageProps, ImageLoader, StaticImageData } from './get-img-props'
 
-import { getImgProps } from './get-img-props'
+import { getImgProps, normalizeImageConfig } from './get-img-props'
 import { Image } from '../../client/image-component'
 
 // This is replaced by webpack alias
@@ -15,10 +15,13 @@ import defaultLoader from 'next/dist/shared/lib/image-loader'
  * Read more: [Next.js docs: `getImageProps`](https://nextjs.org/docs/app/api-reference/components/image#getimageprops)
  */
 export function getImageProps(imgProps: ImageProps) {
+  // Normalize config once for public API callers
+  const imgConf = process.env.__NEXT_IMAGE_OPTS as any as ImageConfigComplete
+  const normalizedConfig = normalizeImageConfig(imgConf)
+
   const { props } = getImgProps(imgProps, {
     defaultLoader,
-    // This is replaced by webpack define plugin
-    imgConf: process.env.__NEXT_IMAGE_OPTS as any as ImageConfigComplete,
+    imgConf: normalizedConfig,
   })
   // Normally we don't care about undefined props because we pass to JSX,
   // but this exported function could be used by the end user for anything

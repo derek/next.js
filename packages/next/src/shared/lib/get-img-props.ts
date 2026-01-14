@@ -4,6 +4,7 @@ import { getImageBlurSvg } from './image-blur-svg'
 import { imageConfigDefault } from './image-config'
 import type {
   ImageConfigComplete,
+  ImageConfigNormalized,
   ImageLoaderProps,
   ImageLoaderPropsWithConfig,
 } from './image-config'
@@ -99,6 +100,25 @@ type LoadingValue = (typeof VALID_LOADING_VALUES)[number]
 type ImageConfig = ImageConfigComplete & {
   allSizes: number[]
   output?: 'standalone' | 'export'
+}
+
+/**
+ * Normalizes image configuration by sorting and combining device/image sizes.
+ * This operation is expensive and should be memoized to avoid repeated work.
+ */
+export function normalizeImageConfig(
+  c: ImageConfigComplete
+): ImageConfigNormalized {
+  const allSizes = [...c.deviceSizes, ...c.imageSizes].sort((a, b) => a - b)
+  const deviceSizes = c.deviceSizes.sort((a, b) => a - b)
+  const qualities = c.qualities?.sort((a, b) => a - b)
+  return {
+    ...c,
+    allSizes,
+    deviceSizes,
+    qualities,
+    __normalized: true,
+  }
 }
 
 export type ImageLoader = (p: ImageLoaderProps) => string
@@ -311,14 +331,18 @@ export function getImgProps(
 } {
   const { imgConf, showAltText, blurComplete, defaultLoader } = _state
   let config: ImageConfig
-  let c = imgConf || imageConfigDefault
-  if ('allSizes' in c) {
-    config = c as ImageConfig
+
+  // Use pre-normalized config if available (avoids expensive array operations)
+  if (imgConf && '__normalized' in imgConf) {
+    config = imgConf as ImageConfigNormalized
   } else {
-    const allSizes = [...c.deviceSizes, ...c.imageSizes].sort((a, b) => a - b)
-    const deviceSizes = c.deviceSizes.sort((a, b) => a - b)
-    const qualities = c.qualities?.sort((a, b) => a - b)
-    config = { ...c, allSizes, deviceSizes, qualities }
+    // Fallback: normalize on-demand for backward compatibility
+    const c = imgConf || imageConfigDefault
+    if ('allSizes' in c) {
+      config = c as ImageConfig
+    } else {
+      config = normalizeImageConfig(c)
+    }
   }
 
   if (typeof defaultLoader === 'undefined') {

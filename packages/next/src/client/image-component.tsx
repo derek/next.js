@@ -373,6 +373,7 @@ export const Image = forwardRef<HTMLImageElement | null, ImageProps>(
         allSizes,
         deviceSizes,
         qualities,
+        __normalized: true as const,
         // During the SSR, configEnv (__NEXT_IMAGE_OPTS) does not include
         // security sensitive configs like `localPatterns`, which is needed
         // during the server render to ensure it's validated. Therefore use
