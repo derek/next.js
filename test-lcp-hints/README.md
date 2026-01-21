@@ -137,3 +137,32 @@ Vercel Speed Insights already collects LCP attribution data from real users in p
    ```
 
 The key insight is that Speed Insights already has the data needed to make this automatic - it just needs to be connected back to the application layer.
+
+### Implementation Simplification (Idea)
+
+The current implementation passes `injectedLCPHint` as a mutable ref through multiple function signatures (`app-render.tsx` → `create-component-tree.tsx` → `walk-tree-with-flight-router-state.tsx` → `get-layer-assets.tsx`), following the same pattern as `injectedCSS`, `injectedJS`, and `injectedFontPreloadTags`.
+
+**Potential simplifications:**
+
+1. **Add to `AppRenderContext`** - Move the `injectedLCPHint` ref onto the `ctx` object which is already passed everywhere:
+   ```typescript
+   export type AppRenderContext = {
+     // ... existing fields
+     injectedLCPHint: { current: boolean }
+   }
+   ```
+   This would eliminate the need to modify function signatures in the tree-walking code.
+
+2. **Use a WeakMap** - Track injection state in a module-level WeakMap keyed on the render context:
+   ```typescript
+   const lcpHintInjected = new WeakMap<AppRenderContext, boolean>()
+
+   // In get-layer-assets.tsx
+   if (!lcpHintInjected.get(ctx)) {
+     lcpHintInjected.set(ctx, true)
+     // inject hint
+   }
+   ```
+   This avoids any changes to function signatures or type definitions.
+
+3. **Consolidate with font preload tracking** - The `injectedFontPreloadTags` Set already tracks which font preloads have been injected. LCP hints could potentially be tracked alongside this existing mechanism rather than as a separate boolean.
