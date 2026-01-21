@@ -96,3 +96,44 @@ Then visit http://localhost:3000 and view the page source to see the preload hin
 - Support for dynamic route patterns (e.g., `/blog/[slug]`)
 - HTTP Link header support for CDN/edge preloading
 - Integration with RUM data collection for automatic LCP detection
+
+### Speed Insights Integration (Idea)
+
+Vercel Speed Insights already collects LCP attribution data from real users in production, including which specific element (image URL, text node, etc.) caused the LCP for each route. This data could be used to automatically generate or suggest `lcpHints` configuration.
+
+**Potential approaches:**
+
+1. **Dashboard suggestions** - Speed Insights dashboard could show a "Suggested lcpHints" section with copy-paste config based on aggregated LCP data:
+   ```
+   Based on your production traffic, we recommend:
+
+   lcpHints: {
+     '/': { image: '/hero.jpg' },           // LCP 85% of visits
+     '/products': { image: '/banner.webp' }, // LCP 72% of visits
+   }
+   ```
+
+2. **Build-time API** - `next build` could optionally fetch LCP insights from a Speed Insights API and auto-generate hints:
+   ```js
+   // next.config.js
+   module.exports = {
+     experimental: {
+       autoLcpHints: true, // Fetch from Speed Insights during build
+     }
+   }
+   ```
+
+3. **Edge-injected preloads** - For Vercel deployments, the edge could automatically inject `Link: <...>; rel=preload` headers based on Speed Insights data, without any config needed. This would be completely transparent to developers.
+
+4. **Dev mode feedback** - In development, the existing LCP detection (via PerformanceObserver) could report detected LCP elements back to the dev server via `/__nextjs_lcp_report`, which would log suggested config to the terminal:
+   ```
+   ┌─────────────────────────────────────────────────────┐
+   │ LCP Detected on /                                  │
+   │ Image: /hero.jpg                                   │
+   │                                                    │
+   │ Add to next.config.js:                             │
+   │   lcpHints: { '/': { image: '/hero.jpg' } }        │
+   └─────────────────────────────────────────────────────┘
+   ```
+
+The key insight is that Speed Insights already has the data needed to make this automatic - it just needs to be connected back to the application layer.
