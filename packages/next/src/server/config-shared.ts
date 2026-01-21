@@ -179,6 +179,23 @@ export interface TurbopackOptions {
   debugIds?: boolean
 }
 
+/**
+ * Hints for optimizing Largest Contentful Paint (LCP) per route.
+ * These generate Link preload headers to help browsers fetch LCP resources earlier.
+ */
+export interface LCPHint {
+  /**
+   * Image URL to preload (relative or absolute).
+   * Will generate: Link: <url>; rel=preload; as=image; fetchpriority=high
+   */
+  image?: string
+  /**
+   * Font file URL to preload (e.g., '/fonts/inter.woff2').
+   * Will generate: Link: <url>; rel=preload; as=font; crossorigin
+   */
+  font?: string
+}
+
 export interface WebpackConfigContext {
   /** Next.js root directory */
   dir: string
@@ -1092,6 +1109,23 @@ export interface NextConfig {
   /** @see [Disabling x-powered-by](https://nextjs.org/docs/app/api-reference/config/next-config-js/poweredByHeader) */
   poweredByHeader?: boolean
 
+  /**
+   * Per-route hints for LCP (Largest Contentful Paint) optimization.
+   * Generates Link preload headers to help browsers fetch LCP resources earlier.
+   *
+   * @example
+   * ```js
+   * // next.config.js
+   * module.exports = {
+   *   lcpHints: {
+   *     '/': { image: '/hero.jpg' },
+   *     '/about': { font: '/fonts/inter.woff2' },
+   *   }
+   * }
+   * ```
+   */
+  lcpHints?: Record<string, LCPHint>
+
   /** @see [Using the Image Component](https://nextjs.org/docs/app/api-reference/next-config-js/images) */
   images?: ImageConfig
 
@@ -1422,6 +1456,7 @@ export const defaultConfig = Object.freeze({
   generateEtags: true,
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
   poweredByHeader: true,
+  lcpHints: undefined,
   compress: true,
   images: imageConfigDefault,
   devIndicators: {
@@ -1635,6 +1670,7 @@ export interface NextConfigRuntime {
   expireTime: NextConfigComplete['expireTime']
   generateEtags: NextConfigComplete['generateEtags']
   poweredByHeader: NextConfigComplete['poweredByHeader']
+  lcpHints: NextConfigComplete['lcpHints']
   cacheHandler: NextConfigComplete['cacheHandler']
   cacheHandlers: NextConfigComplete['cacheHandlers']
   cacheMaxMemorySize: NextConfigComplete['cacheMaxMemorySize']
@@ -1770,6 +1806,7 @@ export function getNextConfigRuntime(
     expireTime: config.expireTime,
     generateEtags: config.generateEtags,
     poweredByHeader: config.poweredByHeader,
+    lcpHints: config.lcpHints,
     cacheHandler: config.cacheHandler,
     cacheHandlers: config.cacheHandlers,
     cacheMaxMemorySize: config.cacheMaxMemorySize,

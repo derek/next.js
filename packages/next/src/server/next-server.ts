@@ -610,6 +610,8 @@ export default class NextNodeServer extends BaseServer<
       poweredByHeader: boolean
       cacheControl: CacheControl | undefined
       cdnCacheControlHeader?: string
+      pathname?: string
+      lcpHints?: Record<string, import('./config-shared').LCPHint>
     }
   ): Promise<void> {
     return sendRenderResult({
@@ -620,6 +622,8 @@ export default class NextNodeServer extends BaseServer<
       poweredByHeader: options.poweredByHeader,
       cacheControl: options.cacheControl,
       cdnCacheControlHeader: options.cdnCacheControlHeader,
+      pathname: options.pathname,
+      lcpHints: options.lcpHints,
     })
   }
 

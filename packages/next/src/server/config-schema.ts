@@ -652,6 +652,15 @@ export const configSchema: zod.ZodType<NextConfig> = z.lazy(() =>
       .optional(),
     pageExtensions: z.array(z.string()).min(1).optional(),
     poweredByHeader: z.boolean().optional(),
+    lcpHints: z
+      .record(
+        z.string(),
+        z.strictObject({
+          image: z.string().optional(),
+          font: z.string().optional(),
+        })
+      )
+      .optional(),
     productionBrowserSourceMaps: z.boolean().optional(),
     reactCompiler: z.union([
       z.boolean(),

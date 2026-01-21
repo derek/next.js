@@ -486,6 +486,7 @@ async function generateDynamicRSCPayload(
 
   if (!options?.skipPageRendering) {
     const preloadCallbacks: PreloadCallbacks = []
+    const injectedLCPHint = { current: false }
 
     const { Viewport, Metadata, MetadataOutlet } = createMetadataComponents({
       tree: loaderTree,
@@ -525,6 +526,7 @@ async function generateDynamicRSCPayload(
         injectedCSS: new Set(),
         injectedJS: new Set(),
         injectedFontPreloadTags: new Set(),
+        injectedLCPHint,
         rootLayoutIncluded: false,
         preloadCallbacks,
         MetadataOutlet,
@@ -1467,6 +1469,7 @@ async function getRSCPayload(
   })
 
   const preloadCallbacks: PreloadCallbacks = []
+  const injectedLCPHint = { current: false }
 
   const seedData = await createComponentTree({
     ctx,
@@ -1475,6 +1478,7 @@ async function getRSCPayload(
     injectedCSS,
     injectedJS,
     injectedFontPreloadTags,
+    injectedLCPHint,
     rootLayoutIncluded: false,
     missingSlots,
     preloadCallbacks,

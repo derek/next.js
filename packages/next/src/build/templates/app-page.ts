@@ -657,6 +657,7 @@ export async function handler(
           nextConfigOutput: nextConfig.output,
           crossOrigin: nextConfig.crossOrigin,
           trailingSlash: nextConfig.trailingSlash,
+          lcpHints: nextConfig.lcpHints,
           images: nextConfig.images,
           previewProps: prerenderManifest.preview,
           deploymentId: deploymentId,

@@ -51,3 +51,18 @@ export function preconnect(
   }
   ;(ReactDOM as any).preconnect(href, opts)
 }
+
+export function preloadImage(
+  href: string,
+  nonce: string | undefined,
+  fetchPriority?: 'high' | 'low' | 'auto'
+) {
+  const opts: any = { as: 'image' }
+  if (typeof nonce === 'string') {
+    opts.nonce = nonce
+  }
+  if (fetchPriority) {
+    opts.fetchPriority = fetchPriority
+  }
+  ReactDOM.preload(href, opts)
+}

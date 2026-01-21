@@ -254,6 +254,7 @@ type BaseRenderOpts = RenderOpts & {
   poweredByHeader: boolean
   generateEtags: boolean
   previewProps: __ApiPreviewProps
+  lcpHints: Record<string, import('./config-shared').LCPHint> | undefined
 }
 
 /**
@@ -377,6 +378,8 @@ export default abstract class Server<
       poweredByHeader: boolean
       cacheControl: CacheControl | undefined
       cdnCacheControlHeader?: string
+      pathname?: string
+      lcpHints?: Record<string, import('./config-shared').LCPHint>
     }
   ): Promise<void>
 
@@ -533,6 +536,7 @@ export default abstract class Server<
       trailingSlash: this.nextConfig.trailingSlash,
       deploymentId: deploymentId,
       poweredByHeader: this.nextConfig.poweredByHeader,
+      lcpHints: this.nextConfig.lcpHints,
       generateEtags,
       previewProps: this.getPrerenderManifest().preview,
       basePath: this.nextConfig.basePath,
@@ -1778,7 +1782,7 @@ export default abstract class Server<
     const { body } = payload
     let { cacheControl } = payload
     if (!res.sent) {
-      const { generateEtags, poweredByHeader, dev } = this.renderOpts
+      const { generateEtags, poweredByHeader, lcpHints, dev } = this.renderOpts
 
       // In dev, we should not cache pages for any reason.
       if (dev) {
@@ -1802,6 +1806,8 @@ export default abstract class Server<
         cacheControl,
         cdnCacheControlHeader:
           this.nextConfig.experimental.cdnCacheControlHeader,
+        pathname: ctx.pathname,
+        lcpHints,
       })
       res.statusCode = originalStatus
     }

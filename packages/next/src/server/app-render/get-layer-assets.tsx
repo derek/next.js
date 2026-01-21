@@ -5,6 +5,27 @@ import { getAssetQueryString } from './get-asset-query-string'
 import { encodeURIPath } from '../../shared/lib/encode-uri-path'
 import type { PreloadCallbacks } from './types'
 import { renderCssResource } from './render-css-resource'
+import type { LCPHint } from '../config-shared'
+
+/**
+ * Match a pathname against LCP hints configuration.
+ * Returns the matching hint or undefined if no match.
+ */
+function matchLCPHint(
+  pathname: string,
+  lcpHints: Record<string, LCPHint> | undefined
+): LCPHint | undefined {
+  if (!lcpHints) return undefined
+
+  // Exact match first
+  if (lcpHints[pathname]) {
+    return lcpHints[pathname]
+  }
+
+  // TODO: Support dynamic route patterns like /blog/[slug]
+  // For now, only exact matches are supported
+  return undefined
+}
 
 export function getLayerAssets({
   ctx,
@@ -12,12 +33,14 @@ export function getLayerAssets({
   injectedCSS: injectedCSSWithCurrentLayout,
   injectedJS: injectedJSWithCurrentLayout,
   injectedFontPreloadTags: injectedFontPreloadTagsWithCurrentLayout,
+  injectedLCPHint: injectedLCPHintRef,
   preloadCallbacks,
 }: {
   layoutOrPagePath: string | undefined
   injectedCSS: Set<string>
   injectedJS: Set<string>
   injectedFontPreloadTags: Set<string>
+  injectedLCPHint: { current: boolean }
   ctx: AppRenderContext
   preloadCallbacks: PreloadCallbacks
 }): React.ReactNode {
@@ -70,6 +93,38 @@ export function getLayerAssets({
         preloadCallbacks.push(() => {
           ctx.componentMod.preconnect('/', 'anonymous', ctx.nonce)
         })
+      }
+    }
+  }
+
+  // Inject LCP hints from next.config.js (only once per request)
+  if (!injectedLCPHintRef.current) {
+    const lcpHint = matchLCPHint(ctx.url.pathname, ctx.renderOpts.lcpHints)
+    if (lcpHint) {
+      injectedLCPHintRef.current = true
+
+      // Preload LCP image with high priority
+      if (lcpHint.image) {
+        preloadCallbacks.push(() => {
+          ctx.componentMod.preloadImage(lcpHint.image!, ctx.nonce, 'high')
+        })
+      }
+
+      // Preload LCP font (if text-based LCP)
+      // Fonts always require crossOrigin for CORS, default to 'anonymous'
+      if (lcpHint.font) {
+        const ext = /\.(woff|woff2|eot|ttf|otf)$/.exec(lcpHint.font)
+        if (ext) {
+          const type = `font/${ext[1]}`
+          preloadCallbacks.push(() => {
+            ctx.componentMod.preloadFont(
+              lcpHint.font!,
+              type,
+              ctx.renderOpts.crossOrigin ?? 'anonymous',
+              ctx.nonce
+            )
+          })
+        }
       }
     }
   }

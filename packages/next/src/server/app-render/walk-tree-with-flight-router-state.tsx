@@ -33,6 +33,7 @@ export async function walkTreeWithFlightRouterState({
   injectedCSS,
   injectedJS,
   injectedFontPreloadTags,
+  injectedLCPHint,
   rootLayoutIncluded,
   ctx,
   preloadCallbacks,
@@ -46,6 +47,7 @@ export async function walkTreeWithFlightRouterState({
   injectedCSS: Set<string>
   injectedJS: Set<string>
   injectedFontPreloadTags: Set<string>
+  injectedLCPHint: { current: boolean }
   rootLayoutIncluded: boolean
   ctx: AppRenderContext
   preloadCallbacks: PreloadCallbacks
@@ -222,6 +224,7 @@ export async function walkTreeWithFlightRouterState({
         injectedCSS,
         injectedJS,
         injectedFontPreloadTags,
+        injectedLCPHint,
         // This is intentionally not "rootLayoutIncludedAtThisLevelOrAbove" as createComponentTree starts at the current level and does a check for "rootLayoutAtThisLevel" too.
         rootLayoutIncluded,
         preloadCallbacks,
@@ -281,6 +284,7 @@ export async function walkTreeWithFlightRouterState({
       injectedCSS: injectedCSSWithCurrentLayout,
       injectedJS: injectedJSWithCurrentLayout,
       injectedFontPreloadTags: injectedFontPreloadTagsWithCurrentLayout,
+      injectedLCPHint,
       rootLayoutIncluded: rootLayoutIncludedAtThisLevelOrAbove,
       preloadCallbacks,
       MetadataOutlet,

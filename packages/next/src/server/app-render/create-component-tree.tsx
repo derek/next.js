@@ -47,6 +47,7 @@ export function createComponentTree(props: {
   injectedCSS: Set<string>
   injectedJS: Set<string>
   injectedFontPreloadTags: Set<string>
+  injectedLCPHint: { current: boolean }
   ctx: AppRenderContext
   missingSlots?: Set<string>
   preloadCallbacks: PreloadCallbacks
@@ -82,6 +83,7 @@ async function createComponentTreeInternal(
     injectedCSS,
     injectedJS,
     injectedFontPreloadTags,
+    injectedLCPHint,
     ctx,
     missingSlots,
     preloadCallbacks,
@@ -94,6 +96,7 @@ async function createComponentTreeInternal(
     injectedCSS: Set<string>
     injectedJS: Set<string>
     injectedFontPreloadTags: Set<string>
+    injectedLCPHint: { current: boolean }
     ctx: AppRenderContext
     missingSlots?: Set<string>
     preloadCallbacks: PreloadCallbacks
@@ -153,6 +156,7 @@ async function createComponentTreeInternal(
     injectedCSS: injectedCSSWithCurrentLayout,
     injectedJS: injectedJSWithCurrentLayout,
     injectedFontPreloadTags: injectedFontPreloadTagsWithCurrentLayout,
+    injectedLCPHint,
   })
 
   const [Template, templateStyles, templateScripts] = template
@@ -530,6 +534,7 @@ async function createComponentTreeInternal(
               injectedCSS: injectedCSSWithCurrentLayout,
               injectedJS: injectedJSWithCurrentLayout,
               injectedFontPreloadTags: injectedFontPreloadTagsWithCurrentLayout,
+              injectedLCPHint,
               ctx,
               missingSlots,
               preloadCallbacks,

@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import type RenderResult from './render-result'
 import type { CacheControl } from './lib/cache-control'
+import type { LCPHint } from './config-shared'
 
 import { isResSent } from '../shared/lib/utils'
 import { generateETag } from './lib/etag'
@@ -32,6 +33,43 @@ export function sendEtagResponse(
   return false
 }
 
+/**
+ * Match a pathname against LCP hints configuration.
+ * Returns the matching hint or undefined if no match.
+ */
+function matchLCPHint(
+  pathname: string,
+  lcpHints: Record<string, LCPHint>
+): LCPHint | undefined {
+  // Exact match first
+  if (lcpHints[pathname]) {
+    return lcpHints[pathname]
+  }
+
+  // TODO: Support dynamic route patterns like /blog/[slug]
+  // For now, only exact matches are supported
+  return undefined
+}
+
+/**
+ * Generate Link header value(s) from an LCP hint.
+ */
+function generateLCPLinkHeaders(hint: LCPHint): string[] {
+  const links: string[] = []
+
+  if (hint.image) {
+    // Preload image with high priority for LCP
+    links.push(`<${hint.image}>; rel=preload; as=image; fetchpriority=high`)
+  }
+
+  if (hint.font) {
+    // Preload font (always needs crossorigin for fonts)
+    links.push(`<${hint.font}>; rel=preload; as=font; crossorigin`)
+  }
+
+  return links
+}
+
 export async function sendRenderResult({
   req,
   res,
@@ -40,6 +78,8 @@ export async function sendRenderResult({
   poweredByHeader,
   cacheControl,
   cdnCacheControlHeader,
+  pathname,
+  lcpHints,
 }: {
   req: IncomingMessage
   res: ServerResponse
@@ -48,9 +88,22 @@ export async function sendRenderResult({
   poweredByHeader: boolean
   cacheControl: CacheControl | undefined
   cdnCacheControlHeader?: string
+  pathname?: string
+  lcpHints?: Record<string, LCPHint>
 }): Promise<void> {
   if (isResSent(res)) {
     return
+  }
+
+  // Emit LCP preload hints as Link headers for HTML responses
+  if (pathname && lcpHints && result.contentType === HTML_CONTENT_TYPE_HEADER) {
+    const hint = matchLCPHint(pathname, lcpHints)
+    if (hint) {
+      const links = generateLCPLinkHeaders(hint)
+      if (links.length > 0) {
+        res.setHeader('Link', links.join(', '))
+      }
+    }
   }
 
   if (poweredByHeader && result.contentType === HTML_CONTENT_TYPE_HEADER) {

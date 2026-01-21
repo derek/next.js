@@ -98,6 +98,7 @@ export interface RenderOptsPartial {
   enableTainting?: boolean
   assetPrefix?: string
   crossOrigin?: '' | 'anonymous' | 'use-credentials' | undefined
+  lcpHints?: Record<string, import('../config-shared').LCPHint>
   nextFontManifest?: DeepReadonly<NextFontManifest>
   botType?: 'dom' | 'html' | undefined
   serveStreamingMetadata?: boolean
