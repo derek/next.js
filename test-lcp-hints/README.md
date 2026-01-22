@@ -96,11 +96,7 @@ Then visit http://localhost:3000 and view the page source to see the preload hin
 - Support for dynamic route patterns (e.g., `/blog/[slug]`)
 - HTTP Link header support for CDN/edge preloading
 - Integration with RUM data collection for automatic LCP detection
-
-### Speed Insights Integration (Idea)
-
-Vercel Speed Insights already collects LCP attribution data from real users in production, including which specific element (image URL, text node, etc.) caused the LCP for each route. This data could be used to automatically generate or suggest `lcpHints` configuration.
-
+  
 **Potential approaches:**
 
 1. **Dashboard suggestions** - Speed Insights dashboard could show a "Suggested lcpHints" section with copy-paste config based on aggregated LCP data:
@@ -138,7 +134,61 @@ Vercel Speed Insights already collects LCP attribution data from real users in p
 
 The key insight is that Speed Insights already has the data needed to make this automatic - it just needs to be connected back to the application layer.
 
-### Implementation Simplification (Idea)
+
+
+# Ideas
+
+## Speed Insights Integration
+
+Vercel Speed Insights already collects LCP attribution data from real users in production, including which specific element (image URL, text node, etc.) caused the LCP for each route. This data could be used to automatically generate or suggest `lcpHints` configuration.
+
+```mermaid
+flowchart TB
+    subgraph Production["Production (Real Users)"]
+        User[User visits page]
+        Browser[Browser renders page]
+        PerfObserver[PerformanceObserver detects LCP]
+        SpeedInsights[Vercel Speed Insights]
+    end
+
+    subgraph Edge["Vercel Edge"]
+        EdgeFn[Edge Function]
+        LCPData[(LCP Data Store)]
+        PreloadInjector[Preload Header Injector]
+    end
+
+    subgraph Origin["Next.js Server"]
+        HTML[HTML Response]
+    end
+
+    subgraph FeedbackLoop["Closed Feedback Loop"]
+        Aggregate[Aggregate LCP by route]
+        Analyze[Identify top LCP elements]
+    end
+
+    User --> Browser
+    Browser --> PerfObserver
+    PerfObserver -->|"LCP attribution data"| SpeedInsights
+    SpeedInsights --> Aggregate
+    Aggregate --> Analyze
+    Analyze -->|"Store per-route hints"| LCPData
+
+    User -->|"Request /products"| EdgeFn
+    EdgeFn -->|"Lookup LCP hint"| LCPData
+    LCPData -->|"image: /hero.jpg"| PreloadInjector
+    PreloadInjector -->|"Link: </hero.jpg>; rel=preload"| HTML
+    HTML -->|"HTML + Preload Headers"| Browser
+```
+
+The closed loop:
+
+1. **Collection**: Real users load pages, PerformanceObserver detects LCP elements, data flows to Speed Insights
+2. **Analysis**: Speed Insights aggregates data per route, identifies which element is LCP most often
+3. **Storage**: LCP hints stored at the edge, keyed by route
+4. **Application**: Next request to that route, edge looks up hint, injects `Link: rel=preload` header before HTML even arrives
+5. **Repeat**: Better LCP → new measurements → loop continues adapting
+
+## Implementation Simplification
 
 The current implementation passes `injectedLCPHint` as a mutable ref through multiple function signatures (`app-render.tsx` → `create-component-tree.tsx` → `walk-tree-with-flight-router-state.tsx` → `get-layer-assets.tsx`), following the same pattern as `injectedCSS`, `injectedJS`, and `injectedFontPreloadTags`.
 
